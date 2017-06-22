@@ -1,6 +1,7 @@
 #include <ESP8266WebServer.h>
 #include "config.h"
 #include <FS.h>
+#include "debug.h"
 
 const char WiFiAPPSK[] = "password";
 
@@ -38,8 +39,8 @@ bool serverBegin() {
      Serial.println("Error starting soft AP");
     return false;
   }
-  Serial.print("Soft AP started sucessfully at: ");
-  Serial.println(WiFi.softAPIP());
+  dpnl("Soft AP started sucessfully at: ");
+  dp(WiFi.softAPIP());
 
   server.begin();
   return true;

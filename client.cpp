@@ -1,5 +1,4 @@
 void clientSetup() {
-
 }
 
 void clientBegin() {

@@ -4,18 +4,24 @@
 #include "server.h"
 #include "client.h"
 #include "config.h"
+#include "debug.h"
 
 #define DEBUG
 
+const int debounce = 200;
 const int modePin = 13;
 
-bool serverMode = true;
 bool modeChanged = false;
+bool serverMode = true;
 
-//TODO needs to be put in server file
+unsigned long last_interrupt_time = 0;
 
 void modePinChanged() {
-  modeChanged = true;
+  unsigned long interrupt_time = millis();
+  if (interrupt_time - last_interrupt_time > debounce) {
+    modeChanged = true;
+  }
+  last_interrupt_time = interrupt_time;
 }
 
 void setup() {
@@ -32,31 +38,29 @@ void setup() {
 
   //setup hardware
   pinMode(modePin, INPUT_PULLUP);
-  serverMode = digitalRead(modePin);
-  attachInterrupt(digitalPinToInterrupt(modePin), modePinChanged, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(modePin), modePinChanged, RISING);
 
   serverBegin();
 }
 
 void loop() {
-  //  if (modeChanged) {
-  //    modeChanged = false;
-  //    bool prevMode = serverMode;
-  //    serverMode = digitalRead(modePin);
-  //    if (serverMode != prevMode) {
-  //      if (serverMode) {
-  //        clientCleanup();
-  //        serverBegin();
-  //      } else {
-  //        serverCleanup();
-  //        clientBegin();
-  //      }
-  //    }
-  //  }
-  //  if (serverMode) {
-  //    serverLoop();
-  //  } else {
-  //    clientLoop();
-  //  }
+  if (modeChanged) {
+    modeChanged = false;
+    serverMode = !serverMode;
+    if (serverMode) {
+      dp("Server mode on");
+      clientCleanup();
+      serverBegin();
+    } else {
+      dp("Server mode off");
+      serverCleanup();
+      clientBegin();
+    }
+  }
+  if (serverMode) {
+    serverLoop();
+  } else {
+    clientLoop();
+  }
   serverLoop();
 }
