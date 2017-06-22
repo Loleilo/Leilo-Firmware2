@@ -1,0 +1,1 @@
+bool saveConfigStr(String cfg);
