@@ -5,23 +5,20 @@
 #include "client.h"
 #include "config.h"
 #include "debug.h"
+#include "pins.h"
 
-#define DEBUG
 
-const int debounce = 200;
-const int modePin = 13;
+const int debounce = 300;
+const int modePin = D7;
+const int modeIndPin = D1;
 
-bool modeChanged = false;
+volatile bool modeChanged = true;
 bool serverMode = true;
 
 unsigned long last_interrupt_time = 0;
 
-void modePinChanged() {
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > debounce) {
-    modeChanged = true;
-  }
-  last_interrupt_time = interrupt_time;
+ICACHE_RAM_ATTR void modePinChanged() {
+  modeChanged = true;
 }
 
 void setup() {
@@ -38,29 +35,44 @@ void setup() {
 
   //setup hardware
   pinMode(modePin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(modePin), modePinChanged, RISING);
-
-  serverBegin();
+  pinMode(modeIndPin, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(modePin), modePinChanged, CHANGE);
 }
 
 void loop() {
   if (modeChanged) {
+    unsigned long interrupt_time = millis();
     modeChanged = false;
-    serverMode = !serverMode;
+    if (interrupt_time - last_interrupt_time > debounce) {
+      serverMode = digitalRead(modePin);
+      if (serverMode) {
+        dp("Server mode on");
+        clientCleanup();
+        digitalWrite(modeIndPin, HIGH);
+        serverBegin();
+      } else {
+        dp("Server mode off");
+        if (!serverCleanup()) {
+          dp("Server cleanup failed. Falling back to server mode");
+          modeChanged = true;
+          last_interrupt_time = 0;
+          return;
+        }
+        digitalWrite(modeIndPin, LOW);
+        if (!clientBegin()) {
+          dp("Client begin failed. Falling back to server mode");
+          modeChanged = true;
+          last_interrupt_time = 0;
+          return;
+        }
+      }
+    }
+    last_interrupt_time = interrupt_time;
+  } else {
     if (serverMode) {
-      dp("Server mode on");
-      clientCleanup();
-      serverBegin();
+      serverLoop();
     } else {
-      dp("Server mode off");
-      serverCleanup();
-      clientBegin();
+      clientLoop();
     }
   }
-  if (serverMode) {
-    serverLoop();
-  } else {
-    clientLoop();
-  }
-  serverLoop();
 }

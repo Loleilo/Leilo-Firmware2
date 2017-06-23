@@ -1,4 +1,4 @@
 void clientSetup();
-void clientBegin();
+bool clientBegin();
 void clientLoop();
 void clientCleanup();

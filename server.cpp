@@ -50,5 +50,13 @@ void serverLoop() {
   server.handleClient();
 }
 
-void serverCleanup() {
+bool serverCleanup() {
+  dp("Server cleaning up...");
+  if(!WiFi.softAPdisconnect(true)){
+    dp("Disconnect failed");
+    return false;
+  }
+  dp("Soft AP disconnected");
+  WiFi.disconnect();
+  dp("Done");
 }

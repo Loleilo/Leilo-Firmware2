@@ -11,7 +11,13 @@
                 if (this.readyState === 4 && this.status === 200) {
                     var parsed = JSON.parse(this.responseText);
                     $id("ssid").value = parsed.wifi.ssid;
-                    $id("password").value = parsed.wifi.password;
+                    $id("wifipassword").value = parsed.wifi.password;
+                    $id("apiURL").value = parsed.leilo.apiURL;
+                    $id("version").value = parsed.leilo.version;
+                    $id("username").value = parsed.leilo.username;
+                    $id("leilopassword").value = parsed.leilo.password;
+                    $id("groupID").value = parsed.leilo.groupID;
+                    $id("atomID").value = parsed.leilo.atomID;
                 }
             };
             xhttp.open("GET", "/getconfig", true);
@@ -23,7 +29,15 @@
             xhttp.send(JSON.stringify({
                 wifi: {
                     ssid: $id("ssid").value,
-                    password: $id("password").value
+                    password: $id("wifipassword").value
+                },
+                leilo: {
+                    apiURL: $id("apiURL").value,
+                    version: $id("version").value,
+                    username: $id("username").value,
+                    password: $id("leilopassword").value,
+                    groupID: $id("groupID").value,
+                    atomID: $id("atomID").value,
                 }
             }));
         }
@@ -31,8 +45,15 @@
 </head>
 <body onload="loadDoc();">
 <h1>WiFi connection</h1>
-SSID: <input id="ssid" title="username" name="username" type="text"><br>
-Password: <input id="password" title="password" name="password" type="password"><br>
+SSID: <input id="ssid" title="ssid" name="ssid" type="text"><br>
+Password: <input id="wifipassword" title="password" name="password" type="password"><br>
+<h1>Leilo</h1>
+API URL: <input id="apiURL" type="text"><br>
+API Version: <input id="version" type="text"><br>
+Username: <input id="username" type="text"><br>
+Password: <input id="leilopassword" type="text"><br>
+Device ID: <input id="groupID" type="text"><br>
+Sensor ID: <input id="atomID" type="text"><br>
 <button onclick="sendData()">Save</button>
 </body>
 </html>

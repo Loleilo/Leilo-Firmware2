@@ -1,0 +1,14 @@
+{
+	"wifi": {
+		"ssid": "your wifi ssid here",
+		"password": "your wifi password here"
+	},
+	"leilo": {
+		"version": "1.0.0",
+		"apiURL": "http://sunnylan.tk/Leilo-API/api.php",
+		"username": "your leilo username here",
+		"password": "your leilo password here",
+		"groupID": "your device id here",
+		"atomID": "your sensor id here"
+	}
+}
