@@ -39,6 +39,14 @@ bool loadConfigFS() {
   configuration.ssid = configObj["wifi"]["ssid"];
   configuration.wifiPassword = configObj["wifi"]["password"];
 
+  JsonObject& leiloObj = configObj["leilo"];
+  configuration.apiURL = leiloObj["apiURL"];
+  configuration.apiVersion = leiloObj["version"];
+  configuration.username = leiloObj["username"];
+  configuration.leiloPassword = leiloObj["password"];
+  configuration.groupID = leiloObj["groupID"];
+  configuration.atomID = leiloObj["atomID"];
+  
   return true;
 }
 
