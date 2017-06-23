@@ -8,7 +8,11 @@ const char WiFiAPPSK[] = "password";
 ESP8266WebServer server(80);    //listen on port 80
 
 void setconfigHandler() {
-  saveConfigStr(server.arg("plain"));
+  if(saveConfigStr(server.arg("plain"))){
+    server.send(200, "Sucess saving");
+  }else{
+    server.send(500, "Error saving");
+  }
 }
 
 void serverSetup() {

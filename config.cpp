@@ -6,7 +6,7 @@
 
 Config configuration;
 
-const int BUF_SIZE=512;
+const int BUF_SIZE=1024;
 
 char buf[BUF_SIZE];
 
@@ -19,7 +19,7 @@ bool loadConfigFS() {
 
   size_t size = configFile.size();
   if (size > BUF_SIZE) {
-    dp("Config file size is too large");
+    dp("Config file size is too large" + String(size));
     return false;
   }
 
@@ -28,7 +28,7 @@ bool loadConfigFS() {
   // use configFile.readString instead.
   configFile.readBytes(buf, size);
 
-  StaticJsonBuffer<200> jsonBuffer;
+  StaticJsonBuffer<BUF_SIZE> jsonBuffer;
   JsonObject& configObj = jsonBuffer.parseObject(buf);
 
   if (!configObj.success()) {

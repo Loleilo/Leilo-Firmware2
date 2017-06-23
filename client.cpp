@@ -4,6 +4,7 @@
 #include "config.h"
 #include "debug.h"
 #include "pins.h"
+#include "sleep.h"
 
 const int maxTries = 40;
 const int readPin = D6;
@@ -17,9 +18,9 @@ String cookies;
 const char * headerKeys[] = {"Set-Cookie"};
 size_t headerkeyssize = sizeof(headerKeys) / sizeof(char*);
 
-ICACHE_RAM_ATTR void pinChanged() {
-  updated = true;
-}
+//ICACHE_RAM_ATTR void pinChanged() {
+//  updated = true;
+//}
 
 int login() {
   http.begin(configuration.apiURL);
@@ -56,6 +57,7 @@ bool clientBegin() {
   }
 
   WiFi.mode(WIFI_STA);
+  initSleep();
 
   WiFi.begin(configuration.ssid, configuration.wifiPassword);
 
@@ -84,7 +86,7 @@ bool clientBegin() {
   params["password"] = configuration.leiloPassword;
   root["params"] = params;
 
-  loginJSON="";
+  loginJSON = "";
   root.printTo(loginJSON);
 
   http.collectHeaders(headerKeys, headerkeyssize);
@@ -105,13 +107,13 @@ bool clientBegin() {
     delay(1400);
   }
 
-  attachInterrupt(digitalPinToInterrupt(readPin), pinChanged, CHANGE);
+//  attachInterrupt(digitalPinToInterrupt(readPin), pinChanged, CHANGE);
 
   return true;
 }
 
 void clientLoop() {
-  if (updated) {
+//  if (updated) {
     nextval = digitalRead(readPin);
     StaticJsonBuffer<1024> jsonBuffer;
     JsonObject& root = jsonBuffer.createObject();
@@ -130,7 +132,11 @@ void clientLoop() {
     http.addHeader("Cookie", cookies);
     http.POST(out);
     String res = http.getString();
-    dp("result is"+res);
+    if (res.length() == 0) {
+      dp("Error: server gave empty response");
+      return;
+    }
+    dp("result is" + res);
     JsonObject& root2 = jsonBuffer.parseObject(res);
     int code = root2["returnCode"];
     if (code == 0) {
@@ -149,8 +155,9 @@ void clientLoop() {
 
       dp("errror");
     }
-  }
-  delay(250);
+//  }
+  delay(1000);
+
 }
 
 void clientCleanup() {

@@ -1,13 +1,21 @@
-struct ConfigT{
+struct Atom{
   
-  const char* ssid;
-  const char* wifiPassword;
-  const char* apiVersion;
-  const char* apiURL;
-  const char* username;
-  const char* leiloPassword;
-  const char* atomID;
-  const char* groupID;
+}
+
+struct ConfigT {
+  struct {
+    const char* ssid;
+    const char* password;
+  } wifi;
+  struct {
+    const char* apiVersion;
+    const char* apiURL;
+    const char* username;
+    const char* password;
+    const char* groupID;
+  } leilo;
+  int numAtoms;
+  Atom* atoms;
 };
 typedef ConfigT Config;
 

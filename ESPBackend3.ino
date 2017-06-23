@@ -7,13 +7,12 @@
 #include "debug.h"
 #include "pins.h"
 
-
 const int debounce = 300;
 const int modePin = D7;
 const int modeIndPin = D1;
 
 volatile bool modeChanged = true;
-bool serverMode = true;
+bool serverMode;
 
 unsigned long last_interrupt_time = 0;
 
@@ -36,13 +35,14 @@ void setup() {
   //setup hardware
   pinMode(modePin, INPUT_PULLUP);
   pinMode(modeIndPin, OUTPUT);
+  digitalWrite(modeIndPin, HIGH);
+  serverMode = !digitalRead(modePin);
   attachInterrupt(digitalPinToInterrupt(modePin), modePinChanged, CHANGE);
 }
 
 void loop() {
   if (modeChanged) {
     unsigned long interrupt_time = millis();
-    modeChanged = false;
     if (interrupt_time - last_interrupt_time > debounce) {
       serverMode = digitalRead(modePin);
       if (serverMode) {
@@ -64,6 +64,7 @@ void loop() {
       }
     }
     last_interrupt_time = interrupt_time;
+    modeChanged = false;
   } else {
     if (serverMode) {
       serverLoop();
