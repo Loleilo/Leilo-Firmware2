@@ -17,12 +17,13 @@ String cookies;
 const char * headerKeys[] = {"Set-Cookie"};
 size_t headerkeyssize = sizeof(headerKeys) / sizeof(char*);
 
-void pinChanged() {
+ICACHE_RAM_ATTR void pinChanged() {
   updated = true;
 }
 
 int login() {
   http.begin(configuration.apiURL);
+  dp("Sending login" + loginJSON);
   http.POST(loginJSON);
   String res = http.getString();
 
@@ -43,6 +44,7 @@ int login() {
 }
 
 void clientSetup() {
+  pinMode(readPin, INPUT_PULLUP);
 }
 
 bool clientBegin() {
@@ -72,7 +74,7 @@ bool clientBegin() {
   }
   dp("Connected!");
 
-  StaticJsonBuffer<200> jsonBuffer;
+  StaticJsonBuffer<512> jsonBuffer;
   JsonObject& root = jsonBuffer.createObject();
   root["version"] = configuration.apiVersion;
   root["call"] = "login";
@@ -82,6 +84,7 @@ bool clientBegin() {
   params["password"] = configuration.leiloPassword;
   root["params"] = params;
 
+  loginJSON="";
   root.printTo(loginJSON);
 
   http.collectHeaders(headerKeys, headerkeyssize);
@@ -94,6 +97,10 @@ bool clientBegin() {
       break;
     } else {
       dp("login fail code " + String(res));
+    }
+    if (cnt >= maxTries) {
+      dp("Client unable to begin: Could not login");
+      return false;
     }
     delay(1400);
   }
@@ -123,6 +130,7 @@ void clientLoop() {
     http.addHeader("Cookie", cookies);
     http.POST(out);
     String res = http.getString();
+    dp("result is"+res);
     JsonObject& root2 = jsonBuffer.parseObject(res);
     int code = root2["returnCode"];
     if (code == 0) {
@@ -146,4 +154,6 @@ void clientLoop() {
 }
 
 void clientCleanup() {
+  detachInterrupt(digitalPinToInterrupt(readPin));
+  WiFi.disconnect();
 }

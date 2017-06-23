@@ -48,23 +48,19 @@ void loop() {
       if (serverMode) {
         dp("Server mode on");
         clientCleanup();
-        digitalWrite(modeIndPin, HIGH);
         serverBegin();
+        digitalWrite(modeIndPin, HIGH);
       } else {
         dp("Server mode off");
         if (!serverCleanup()) {
-          dp("Server cleanup failed. Falling back to server mode");
-          modeChanged = true;
-          last_interrupt_time = 0;
+          dp("Server cleanup failed.");
+          return;
+        }
+        if (!clientBegin()) {
+          dp("Client begin failed.");
           return;
         }
         digitalWrite(modeIndPin, LOW);
-        if (!clientBegin()) {
-          dp("Client begin failed. Falling back to server mode");
-          modeChanged = true;
-          last_interrupt_time = 0;
-          return;
-        }
       }
     }
     last_interrupt_time = interrupt_time;
