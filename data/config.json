@@ -8,21 +8,23 @@
 		"apiURL": "http://sunnylan.tk/Leilo-API/api.php",
 		"username": "sunny_esp8266_1",
 		"password": "45i48tljwo8tj3o8jtt3qo8j",
-		"groupID": "5d663818-47e3-11e7-8989-5b95d87ce60a",
+		"groupName": "Device 1",
+		"groupState": "unmodified",
 		"pollInt": 1000
 	},
+	"numAtoms": 2,
 	"atoms": {
 		"D6": {
-			"id": "7ef0c17c-47e3-11e7-8989-5b95d87ce60a",
-			"name": "d",
+			"name": "Garage door",
 			"state": "unmodified",
 			"type": "digital",
-			"direction": "input",
+			"direction": "input_pullup",
 			"poll":1
 		},
-		"heartbeat": {
-			"state": "uncreated",
-			"type": "special",
+		"_heartbeat": {
+			"state": "unmodified",
+			"name": "_heartbeat",
+			"type": "heartbeat",
 			"poll": 1
 		}
 	}

@@ -3,7 +3,7 @@
 #include <FS.h>
 #include "debug.h"
 
-const char WiFiAPPSK[] = "password";
+constexpr char * WiFiAPPSK = "password";
 
 ESP8266WebServer server(80);    //listen on port 80
 

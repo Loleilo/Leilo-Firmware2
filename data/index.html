@@ -5,6 +5,7 @@
 
         const availPins = ["D6"];
         var atomsObj;
+        var parsed;
         function $id(id) {
             return document.getElementById(id);
         }
@@ -12,14 +13,15 @@
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function () {
                 if (this.readyState === 4 && this.status === 200) {
-                    const parsed = JSON.parse(this.responseText);
+                    parsed = JSON.parse(this.responseText);
                     $id("ssid").value = parsed.wifi.ssid;
                     $id("wifipassword").value = parsed.wifi.password;
                     $id("apiURL").value = parsed.leilo.apiURL;
                     $id("version").value = parsed.leilo.version;
                     $id("username").value = parsed.leilo.username;
                     $id("leilopassword").value = parsed.leilo.password;
-                    $id("groupID").value = parsed.leilo.groupID;
+                    $id("groupID").value = parsed.leilo.groupID ? parsed.leilo.groupID : "";
+                    $id("groupName").value = parsed.leilo.groupName;
                     $id("pollInt").value = parsed.leilo.pollInt;
                     atomsObj = parsed.atoms;
                     var pinsHTML = "";
@@ -29,18 +31,20 @@
                         const obj = atomsObj[key];
                         if (obj === undefined)continue;
                         pinsHTML += "<h2>" + key + "</h2>";
+                        pinsHTML += "Sensor Name: <input id='" + key + "-name' value='" + obj.name + "'>";
                         pinsHTML += "<input id='" + key + "-enabled' type='checkbox' " + (obj.poll === -1 ? "" : "checked") + "> Sensor Enabled<br>";
-                        pinsHTML += "Sensor ID: <input id='" + key + "-id' value='" + obj.id + "'><br>";
                         pinsHTML += "Sensor type: <select id='" + key + "-type'>" +
                             "<option value='digital' " + (obj.type === "digital" ? "selected" : "") + ">Digital</option>" +
                             "<option value='analog' " + (obj.type === "analog" ? "selected" : "") + ">Analog</option>" +
                             "</select>";
                         pinsHTML += "<select id='" + key + "-direction'>" +
                             "<option value='input' " + (obj.direction === "input" ? "selected" : "") + ">Input</option>" +
+                            "<option value='input_pullup' " + (obj.direction === "input_pullup" ? "selected" : "") + ">Input (Pullup)</option>" +
                             "<option value='output' " + (obj.direction === "output" ? "selected" : "") + ">Output</option>" +
                             "</select><br>";
-                        pinsHTML += "Poll interval: <input id='" + key + "-poll' value='" + obj.poll + "'>";
-                        pinsHTML+="<br><br>"
+                        pinsHTML += "Poll interval: <input id='" + key + "-poll' value='" + obj.poll + "'><br>";
+                        pinsHTML += "Sensor ID: <input id='" + key + "-id' value='" + (obj.id ? obj.id : "") + "'>";
+                        pinsHTML += "<br><br>"
                     }
                     $id("pins").innerHTML = pinsHTML;
                 }
@@ -52,9 +56,9 @@
             var xhttp = new XMLHttpRequest();
             xhttp.onreadystatechange = function () {
                 if (this.readyState === 4 && this.status === 200) {
-                    $id("error").innerText  = "Successfully saved settings";
+                    $id("error").innerText = "Successfully saved settings";
                 } else {
-                    $id("error").innerText  = "Error - please try again";
+                    $id("error").innerText = "Error - please try again";
                 }
             };
             xhttp.open("POST", "/setconfig", true);
@@ -68,24 +72,17 @@
                 var changed = false;
 
                 e = $id(key + "-type");
-                const typeVal = e.options[e.selectedIndex].value;
-                if (obj.type !== typeVal) {
-                    obj.type = typeVal;
-                    changed = true;
-                }
+                obj.type = e.options[e.selectedIndex].value;
+
 
                 e = $id(key + "-direction");
-                const dirVal = e.options[e.selectedIndex].value;
+                obj.direction = e.options[e.selectedIndex].value;
 
-                if (obj.direction !== dirVal) {
-                    obj.direction = dirVal;
-                    changed = true;
-                }
+                obj.poll = $id(key + "-enabled").checked ? $id(key + "-poll").value : -1;
 
-                const pollVal = $id(key + "-enabled").checked ? $id(key + "-poll").value: -1;
-
-                if (obj.poll !== pollVal) {
-                    obj.poll = pollVal;
+                const nameVal = $id(key + "-name").value;
+                if (obj.name !== nameVal) {
+                    obj.name = nameVal;
                     changed = true;
                 }
 
@@ -96,7 +93,7 @@
                 else
                     obj.state = "unmodified";
             }
-            xhttp.send(JSON.stringify({
+            const res = JSON.stringify({
                 wifi: {
                     ssid: $id("ssid").value,
                     password: $id("wifipassword").value
@@ -107,10 +104,17 @@
                     username: $id("username").value,
                     password: $id("leilopassword").value,
                     groupID: $id("groupID").value,
-                    pollInt: $id("pollInt").value
+                    pollInt: $id("pollInt").value,
+                    groupName: $id("groupName").value,
+                    groupState: $id("groupID").value.length === 0 ? "uncreated" :
+                        $id("groupName").value === parsed.leilo.groupName ?
+                            "unmodified" : "modified"
                 },
+                numAtoms: parsed.numAtoms,
                 atoms: atomsObj
-            }));
+            });
+            console.log("Sending data " + res);
+            xhttp.send(res);
         }
     </script>
 </head>
@@ -124,6 +128,7 @@ API Version: <input id="version" type="text"><br>
 Username: <input id="username" type="text"><br>
 Password: <input id="leilopassword" type="text"><br>
 Device ID: <input id="groupID" type="text"><br>
+Device Name: <input id="groupName" type="text"><br>
 Polling speed: <input id="pollInt" type="text"><br>
 <h1>Sensors</h1>
 <div id="pins"></div>

@@ -7,9 +7,9 @@
 #include "debug.h"
 #include "pins.h"
 
-const int debounce = 300;
-const int modePin = D7;
-const int modeIndPin = D1;
+constexpr int debounce = 300;
+constexpr int modePin = D7;
+constexpr int modeIndPin = D1;
 
 volatile bool modeChanged = true;
 bool serverMode;
