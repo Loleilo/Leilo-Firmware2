@@ -1,11 +1,13 @@
 #include <ESP8266WiFi.h>
 #include <ArduinoJson.h>
 #include <ESP8266HTTPClient.h>
+#include <time.h>
 #include "config.h"
 #include "debug.h"
 #include "pins.h"
 #include "sleep.h"
 #include "requests.h"
+#include "datetime.h"
 
 constexpr int maxTries = 40;
 
@@ -14,6 +16,9 @@ HTTPClient http;
 String loginJSON, createGroupJSON, createAtomJSON;
 const char * headerKeys[] = {"Set-Cookie"};
 size_t headerkeyssize = sizeof(headerKeys) / sizeof(char*);
+
+int* pollCnt;
+bool hasHeartbeat;
 
 bool tryLogin() {
   int cnt = 0;
@@ -83,7 +88,8 @@ bool clientBegin() {
     case STATE_UNCREATED: {
         dpnl("Group object is uncreated, must be recreated...");
         String data;
-        int res = sendRequest(createGroupJSON,(char*&) cfg.leilo.groupID);
+        int res = sendRequest(createGroupJSON, (char*&) cfg.leilo.groupID);
+        cfg.leilo.idAlloc = true;
         if (res == 0) {
           cfg.leilo.groupState = STATE_UNMODIFIED;
           dpnl("Success. Recieved group UUID ");
@@ -121,8 +127,15 @@ bool clientBegin() {
 
   createAtomJSON = createCreateAtomRequest(cfg.leilo.groupID);
 
+  //init polling stuff
+  pollCnt = new int[cfg.numAtoms];
+
+
+  hasHeartbeat = false;
+
   StaticJsonBuffer<1024> jsonBuffer;
   for (int i = 0; i < cfg.numAtoms; i++) {
+    pollCnt[i] = 0;
     Atom& atom = cfg.atoms[i];
     switch (atom.state) {
       case STATE_UNCREATED: {
@@ -130,6 +143,7 @@ bool clientBegin() {
           dpnl(atom.key);
           dpnl("is uncreated, must be recreated...");
           int res = sendRequest(createAtomJSON, (char*&)atom.id );
+          atom.idAlloc = true;
           if (res == 0) {
             atom.state = STATE_UNMODIFIED;
             modified = true;
@@ -155,6 +169,7 @@ bool clientBegin() {
           if (res == 0) {
             cfg.leilo.groupState = STATE_UNMODIFIED;
             dp("Success");
+            modified = true;
           } else {
             dpnl("Error code ");
             dp(res);
@@ -163,8 +178,22 @@ bool clientBegin() {
           break;
         }
     }
+
+    //init sensor stuff
+    switch (atom.type) {
+      case TYPE_HEARTBEAT: {
+          hasHeartbeat = true;
+          break;
+        }
+      case TYPE_DIGITAL:
+      case TYPE_ANALOG: {
+          pinMode(atom.pin, atom.direction);
+          break;
+        }
+    }
   }
 
+  //check if config has changed, if so then save again
   if (modified) {
     dpnl("Modified. Need to resave...");
     if (!saveConfigFS()) {
@@ -174,13 +203,82 @@ bool clientBegin() {
     dp("success");
   }
 
+  //init time, if needed
+  if (hasHeartbeat) {
+    if (!initTime()) {
+      dp("Could not start time. Disabling heartbeat temporarily");
+      hasHeartbeat = false;
+    }
+  }
   return true;
 }
 
 void clientLoop() {
+  for (int i = 0; i < cfg.numAtoms; i++) {
+    Atom& atom = cfg.atoms[i];
+    if (atom.poll == -1)continue;//atom is disabled, skip it
 
+    dpnl("Sending atom ");
+    dp(atom.key);
+    if (pollCnt[i] == 0) {
+      switch (atom.type) {
+        case TYPE_HEARTBEAT: {
+            if (hasHeartbeat) {
+              time_t now = time(nullptr);
+              int res = sendRequest(createWriteAtomRequest(cfg.leilo.groupID, atom.id, ctime(&now)));
+              if (res == 0) {
+                dpnl("Heartbeat ");
+                dpnl(atom.id);
+                dp(" sent successfully");
+                pollCnt[i] = atom.poll;
+              } else {
+                dpnl("Error sending heartbeat ");
+                dp(atom.id);
+              }
+            }
+            break;
+          }
+        case TYPE_DIGITAL: //handle both cases with one handler
+        case TYPE_ANALOG: {
+            if (atom.direction == INPUT || atom.direction == INPUT_PULLUP) {
+              int sensorVal;
+              if (atom.type == TYPE_DIGITAL)
+                sensorVal = digitalRead(atom.pin);
+              else
+                sensorVal = analogRead(atom.pin);
+
+              char buf[10];
+
+              int res = sendRequest(createWriteAtomRequest(cfg.leilo.groupID, atom.id, itoa(sensorVal, buf, 10)));
+              if (res == 0) {
+                dpnl("Sensor value ");
+                dpnl(atom.key);
+                dp(" sent successfully");
+                pollCnt[i] = atom.poll;
+              } else {
+                dpnl("Error sending value ");
+                dp(atom.key);
+              }
+            } else {
+              //todo finish this
+            }
+            break;
+          }
+      }
+
+
+    } else --pollCnt[i];
+  }
+  delay(cfg.leilo.pollInt);
 }
 
 void clientCleanup() {
   WiFi.disconnect();
+  if (cfg.leilo.idAlloc)
+    delete[] cfg.leilo.groupID;
+  for (int i = 0; i < cfg.numAtoms; i++) {
+    if (cfg.atoms[i].idAlloc)
+      delete[] cfg.atoms[i].id; // should be the only one that is dynamically allocated
+  }
+  delete[] pollCnt;
 }

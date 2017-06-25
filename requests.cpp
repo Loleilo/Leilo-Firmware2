@@ -45,6 +45,15 @@ String createSetAtomNameRequest( const char* const &groupID, const char* const &
   return createRequest(buf, "setAtomName", params);
 }
 
+String createWriteAtomRequest( const char* const &groupID, const char* const &atomID, const char* const &value) {
+  StaticJsonBuffer<300> buf;
+  JsonObject& params = buf.createObject();
+  params["group_id"] = groupID;
+  params["atom_id"] = atomID;
+  params["value"] = value;
+  return createRequest(buf, "writeAtom", params);
+}
+
 int sendRequest(String req,  char*  &data) {
   http.begin(cfg.leilo.apiURL);
   dp("Sending request: " + req);

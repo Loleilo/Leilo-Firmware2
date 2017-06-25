@@ -43,6 +43,8 @@
                             "<option value='output' " + (obj.direction === "output" ? "selected" : "") + ">Output</option>" +
                             "</select><br>";
                         pinsHTML += "Poll interval: <input id='" + key + "-poll' value='" + obj.poll + "'><br>";
+                        pinsHTML += "Advanced settings:<br>";
+                        pinsHTML += "Pin number: <input id='" + key + "-pin' value='" + obj.pin + "'>";
                         pinsHTML += "Sensor ID: <input id='" + key + "-id' value='" + (obj.id ? obj.id : "") + "'>";
                         pinsHTML += "<br><br>"
                     }
@@ -79,6 +81,8 @@
                 obj.direction = e.options[e.selectedIndex].value;
 
                 obj.poll = $id(key + "-enabled").checked ? $id(key + "-poll").value : -1;
+
+                obj.pin = parseInt($id(key + "-pin").value);
 
                 const nameVal = $id(key + "-name").value;
                 if (obj.name !== nameVal) {

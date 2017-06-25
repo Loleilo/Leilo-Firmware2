@@ -75,6 +75,7 @@ bool loadConfigFS() {
   cfg.leilo.groupID = leiloObj["groupID"];
   cfg.leilo.groupName = leiloObj["groupName"];
   cfg.leilo.groupState = stateStrToInt(leiloObj["groupState"]);
+  cfg.leilo.pollInt = leiloObj["pollInt"];
 
   cfg.numAtoms = configObj["numAtoms"];
   delete[] cfg.atoms;
@@ -103,7 +104,7 @@ bool loadConfigFS() {
     } else {
       dp("Error! Unknown type in config.");
     }
-    if (atom.type != 3) {
+    if (atom.type == TYPE_DIGITAL || atom.type == TYPE_ANALOG) {
       const char*  const &direction = atomObj["direction"];
       if ( 0 == strcmp (direction , "input")) {
         atom.direction = INPUT;
@@ -114,6 +115,7 @@ bool loadConfigFS() {
       } else {
         dp("Error! Unknown direction in config.");
       }
+      atom.pin = atomObj["pin"];
     }
 
     atom.poll = atomObj["poll"];
@@ -128,7 +130,6 @@ bool saveConfigFS() {
   JsonObject& wifi = jsonBuffer.createObject();
   wifi["ssid"] = cfg.wifi.ssid;
   wifi["password"] = cfg.wifi.password;
-  configObj["wifi"] = wifi;
 
   JsonObject& leiloObj = configObj.createNestedObject("leilo");
   leiloObj["apiURL"] = cfg.leilo.apiURL;
@@ -138,6 +139,7 @@ bool saveConfigFS() {
   leiloObj["groupID"] = cfg.leilo.groupID;
   leiloObj["groupName"] = cfg.leilo.groupName;
   leiloObj["groupState"] = stateIntToStr(cfg.leilo.groupState);
+  leiloObj["pollInt"] = cfg.leilo.pollInt;
 
   configObj["numAtoms"] = cfg.numAtoms;
 
@@ -168,6 +170,7 @@ bool saveConfigFS() {
       } else {
         dp("Error! Unknown direction in config.");
       }
+      atomObj["pin"] = atom.pin;
     }
 
     atomObj["poll"] = atom.poll;

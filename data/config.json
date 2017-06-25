@@ -10,6 +10,7 @@
 		"password": "45i48tljwo8tj3o8jtt3qo8j",
 		"groupName": "Device 1",
 		"groupState": "unmodified",
+		"groupID": "d7578587-5953-11e7-87c1-feed01100013",
 		"pollInt": 1000
 	},
 	"numAtoms": 2,
@@ -19,12 +20,15 @@
 			"state": "unmodified",
 			"type": "digital",
 			"direction": "input_pullup",
-			"poll":1
+			"id":"d7c5cbc9-5953-11e7-87c1-feed01100013",
+			"poll":1,
+			"pin":12
 		},
 		"_heartbeat": {
 			"state": "unmodified",
 			"name": "_heartbeat",
 			"type": "heartbeat",
+			"id":"d824583a-5953-11e7-87c1-feed01100013",
 			"poll": 1
 		}
 	}

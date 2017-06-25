@@ -3,11 +3,13 @@
 struct AtomT {
   const char* key;
   const char* id ;
+  bool idAlloc=false;
   const char* name ;
   int state;//1 for unmodified, 2 for modified, 3 for uncreated
   int type; //1 for digital, 2 for analog, 3 for heartbeat
   int direction; //use default consts
   int poll;
+  int pin;
 };
 typedef AtomT Atom;
 
@@ -22,8 +24,10 @@ struct ConfigT {
     const char* username;
     const char* password;
     const char* groupID;
+  bool idAlloc=false;
     const char* groupName;
     int groupState;
+    int pollInt;
   } leilo;
   int numAtoms;
   Atom* atoms;

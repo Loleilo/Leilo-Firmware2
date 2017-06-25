@@ -11,13 +11,29 @@ constexpr int debounce = 300;
 constexpr int modePin = D7;
 constexpr int modeIndPin = D1;
 
-volatile bool modeChanged = true;
-bool serverMode;
+int serverMode;
 
 unsigned long last_interrupt_time = 0;
 
-ICACHE_RAM_ATTR void modePinChanged() {
-  modeChanged = true;
+void initMode() {
+  serverMode = digitalRead(modePin);
+  if (serverMode) {
+    dp("Server mode on");
+    clientCleanup();
+    serverBegin();
+    digitalWrite(modeIndPin, HIGH);
+  } else {
+    dp("Server mode off");
+    if (!serverCleanup()) {
+      dp("Server cleanup failed.");
+      return;
+    }
+    if (!clientBegin()) {
+      dp("Client begin failed.");
+      return;
+    }
+    digitalWrite(modeIndPin, LOW);
+  }
 }
 
 void setup() {
@@ -36,36 +52,22 @@ void setup() {
   pinMode(modePin, INPUT_PULLUP);
   pinMode(modeIndPin, OUTPUT);
   digitalWrite(modeIndPin, HIGH);
-  serverMode = !digitalRead(modePin);
-  attachInterrupt(digitalPinToInterrupt(modePin), modePinChanged, CHANGE);
+
+  //init mode
+  initMode();
 }
 
 void loop() {
-  if (modeChanged) {
-    unsigned long interrupt_time = millis();
-    if (interrupt_time - last_interrupt_time > debounce) {
-      serverMode = digitalRead(modePin);
-      if (serverMode) {
-        dp("Server mode on");
-        clientCleanup();
-        serverBegin();
-        digitalWrite(modeIndPin, HIGH);
-      } else {
-        dp("Server mode off");
-        if (!serverCleanup()) {
-          dp("Server cleanup failed.");
-          return;
-        }
-        if (!clientBegin()) {
-          dp("Client begin failed.");
-          return;
-        }
-        digitalWrite(modeIndPin, LOW);
-      }
+  unsigned long interrupt_time = millis();
+  if (interrupt_time - last_interrupt_time > debounce) {
+    int prevMode = serverMode;
+    serverMode = digitalRead(modePin);
+    if (prevMode != serverMode) {
+      initMode();
     }
     last_interrupt_time = interrupt_time;
-    modeChanged = false;
-  } else {
+  }
+  else {
     if (serverMode) {
       serverLoop();
     } else {

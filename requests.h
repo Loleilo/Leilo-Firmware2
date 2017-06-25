@@ -18,6 +18,7 @@ String createCreateGroupRequest();
 String createLoginRequest( const char* const &user, const char* const &pass);
 String createSetGroupNameRequest( const char* const &groupID, const char* const &name);
 String createSetAtomNameRequest( const char* const &groupID, const char* const &atomID, const char* const &name);
+String createWriteAtomRequest( const char* const &groupID, const char* const &atomID, const char* const &value);
 
 String createCreateAtomRequest( const char* const &groupID);
 
