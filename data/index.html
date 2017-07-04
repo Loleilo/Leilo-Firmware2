@@ -64,6 +64,12 @@
                 }
             };
             xhttp.open("POST", "/setconfig", true);
+            var userChanged = false;
+            if ($id("username").value !== parsed.leilo.username)
+                userChanged = true;
+            if ($id("leilopassword").value !== parsed.leilo.password)
+                userChanged = false;
+
             for (var i = 0; i < availPins.length; i++) {
                 var e;
                 const key = availPins[i];
@@ -90,7 +96,7 @@
                     changed = true;
                 }
 
-                if (obj.id === "")
+                if (userChanged || obj.id === "")
                     obj.state = "uncreated";
                 else if (changed)
                     obj.state = "modified";
