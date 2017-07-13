@@ -130,6 +130,7 @@ bool saveConfigFS() {
   JsonObject& wifi = jsonBuffer.createObject();
   wifi["ssid"] = cfg.wifi.ssid;
   wifi["password"] = cfg.wifi.password;
+  configObj["wifi"] = wifi;
 
   JsonObject& leiloObj = configObj.createNestedObject("leilo");
   leiloObj["apiURL"] = cfg.leilo.apiURL;
@@ -178,6 +179,8 @@ bool saveConfigFS() {
 
   String cfgStr;
   configObj.printTo(cfgStr);
+  dp("Saving config:");
+  dp(cfgStr);
   saveConfigStr(cfgStr);
   return true;
 }

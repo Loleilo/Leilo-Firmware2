@@ -83,8 +83,11 @@ int sendRequest(String req) {
   http.begin(cfg.leilo.apiURL);
   dp("Sending request: " + req);
   http.addHeader("Cookie", cookies);
-  http.POST(req);
+  int retcode=http.POST(req);
   String res = http.getString();
+
+  dpnl("return code ");
+  dp(retcode);
 
   if (res.length() == 0) {
     dp("ERROR: Empty response");

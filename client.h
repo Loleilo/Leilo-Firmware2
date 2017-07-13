@@ -1,7 +1,7 @@
 #include <ESP8266HTTPClient.h>
 
 extern HTTPClient http;
-void clientSetup();
+bool clientSetup();
 bool clientBegin();
-void clientLoop();
-void clientCleanup();
+bool clientLoop();
+bool clientCleanup();

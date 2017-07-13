@@ -15,10 +15,11 @@ void setconfigHandler() {
   }
 }
 
-void serverSetup() {
+bool serverSetup() {
   server.serveStatic("/", SPIFFS, "/index.html");
   server.serveStatic("/getconfig", SPIFFS, "/config.json");
   server.on("/setconfig", setconfigHandler);
+  return true;
 }
 
 bool serverBegin() {
@@ -63,4 +64,5 @@ bool serverCleanup() {
   dp("Soft AP disconnected");
   WiFi.disconnect();
   dp("Done");
+  return true;
 }

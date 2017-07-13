@@ -7,46 +7,71 @@
 #include "debug.h"
 #include "pins.h"
 
+//device will reboot if it gets stuck in error state for long than this time
+constexpr int errorTimeout = 20000;
+
 constexpr int debounce = 300;
 constexpr int modePin = D7;
 constexpr int modeIndPin = D1;
+constexpr int maxErr = 50;
 
 int serverMode;
+bool err = true;
 
 unsigned long last_interrupt_time = 0;
+unsigned long lastError = 0;
 
-void initMode() {
+int errCnt = 0;
+
+bool initMode() {
   serverMode = digitalRead(modePin);
   if (serverMode) {
     dp("Server mode on");
-    clientCleanup();
-    serverBegin();
+    if (!clientCleanup()) {
+      dp("Client cleanup failed.");
+      return false;
+    }
+    if (!serverBegin()) {
+      dp("Server begin failed.");
+      return false;
+    }
     digitalWrite(modeIndPin, HIGH);
   } else {
     dp("Server mode off");
     if (!serverCleanup()) {
       dp("Server cleanup failed.");
-      return;
+      return false;
     }
     if (!clientBegin()) {
       dp("Client begin failed.");
-      return;
+      return false;
     }
     digitalWrite(modeIndPin, LOW);
   }
+  return true;
 }
 
 void setup() {
 #ifdef DEBUG
   Serial.begin(9600);
+  //  Serial.setDebugOutput(true); too much
 #endif
 
   //setup fs
   SPIFFS.begin();
 
   //other stuff
-  serverSetup();
-  clientSetup();
+  if (!serverSetup()) {
+    dp("Server setup failed.");
+    err = true;
+    lastError = millis();
+    return;
+  }
+  if (!clientSetup()) {
+    err = true;
+    lastError = millis();
+    return;
+  }
 
   //setup hardware
   pinMode(modePin, INPUT_PULLUP);
@@ -54,7 +79,9 @@ void setup() {
   digitalWrite(modeIndPin, HIGH);
 
   //init mode
-  initMode();
+  err = initMode();
+  if (err)
+    lastError = millis();
 }
 
 void loop() {
@@ -63,15 +90,34 @@ void loop() {
     int prevMode = serverMode;
     serverMode = digitalRead(modePin);
     if (prevMode != serverMode) {
-      initMode();
+      err = initMode();
+      if (err)
+        lastError = millis();
     }
     last_interrupt_time = interrupt_time;
   }
   else {
-    if (serverMode) {
-      serverLoop();
+    if (!err) {
+      if (millis() - lastError > errorTimeout)
+        ESP.restart();
+      digitalWrite(modeIndPin, HIGH);
+      delay(500);
+      digitalWrite(modeIndPin, LOW);
+      delay(500);
     } else {
-      clientLoop();
+      if (serverMode) {
+        serverLoop();
+      } else {
+        if (clientLoop()) {
+          errCnt = 0;
+        } else {
+          errCnt++;
+          if (errCnt > maxErr) {
+            dp("Too many client errors occured in a row. Ending client loop");
+            err = true;
+          }
+        }
+      }
     }
   }
 }

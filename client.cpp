@@ -42,7 +42,8 @@ bool tryLogin() {
   }
 }
 
-void clientSetup() {
+bool clientSetup() {
+  return true;
 }
 
 bool clientBegin() {
@@ -56,9 +57,35 @@ bool clientBegin() {
 
   //init wifi
   WiFi.mode(WIFI_STA);
-  initSleep();
+
+  // WiFi.scanNetworks will return the number of networks found
+  int n = WiFi.scanNetworks();
+  Serial.println("scan done");
+  if (n == 0)
+    Serial.println("no networks found");
+  else
+  {
+    Serial.print(n);
+    Serial.println(" networks found");
+    for (int i = 0; i < n; ++i)
+    {
+      // Print SSID and RSSI for each network found
+      Serial.print(i + 1);
+      Serial.print(": ");
+      Serial.print(WiFi.SSID(i));
+      Serial.print(" (");
+      Serial.print(WiFi.RSSI(i));
+      Serial.print(")");
+      Serial.println((WiFi.encryptionType(i) == ENC_TYPE_NONE) ? " " : "*");
+      delay(10);
+    }
+  }
+  Serial.println("");
+
+  //  initSleep();
   dpnl("Connecting to ");
   dpnl(cfg.wifi.ssid);
+  WiFi.setOutputPower(0);
   WiFi.begin(cfg.wifi.ssid, cfg.wifi.password);
 
   int cnt = 0;
@@ -74,6 +101,10 @@ bool clientBegin() {
   }
   dp();
   dp("Connected!");
+
+  Serial.println("scan start");
+
+
 
   //init request stuff
   http.collectHeaders(headerKeys, headerkeyssize);
@@ -137,6 +168,7 @@ bool clientBegin() {
   for (int i = 0; i < cfg.numAtoms; i++) {
     pollCnt[i] = 0;
     Atom& atom = cfg.atoms[i];
+    if (atom.poll == -1) continue;
     switch (atom.state) {
       case STATE_UNCREATED: {
           dpnl("Atom ");
@@ -213,19 +245,20 @@ bool clientBegin() {
   return true;
 }
 
-void clientLoop() {
+bool clientLoop() {
   for (int i = 0; i < cfg.numAtoms; i++) {
     Atom& atom = cfg.atoms[i];
     if (atom.poll == -1)continue;//atom is disabled, skip it
 
-    dpnl("Sending atom ");
-    dp(atom.key);
     if (pollCnt[i] == 0) {
+      dpnl("Sending atom ");
+      dp(atom.key);
+      int res;
       switch (atom.type) {
         case TYPE_HEARTBEAT: {
             if (hasHeartbeat) {
               time_t now = time(nullptr);
-              int res = sendRequest(createWriteAtomRequest(cfg.leilo.groupID, atom.id, ctime(&now)));
+              res = sendRequest(createWriteAtomRequest(cfg.leilo.groupID, atom.id, ctime(&now)));
               if (res == 0) {
                 dpnl("Heartbeat ");
                 dpnl(atom.id);
@@ -249,7 +282,7 @@ void clientLoop() {
 
               char buf[10];
 
-              int res = sendRequest(createWriteAtomRequest(cfg.leilo.groupID, atom.id, itoa(sensorVal, buf, 10)));
+              res = sendRequest(createWriteAtomRequest(cfg.leilo.groupID, atom.id, itoa(sensorVal, buf, 10)));
               if (res == 0) {
                 dpnl("Sensor value ");
                 dpnl(atom.key);
@@ -265,14 +298,23 @@ void clientLoop() {
             break;
           }
       }
-
-
+      if (res == 4) {
+        dp("deuathed. relogging in");
+         if(!tryLogin()){
+         dp("failed");
+         res=-1;
+         }
+      }
+      if(res!=0){
+        return false;
+      }
     } else --pollCnt[i];
   }
   delay(cfg.leilo.pollInt);
+  return true;
 }
 
-void clientCleanup() {
+bool clientCleanup() {
   WiFi.disconnect();
   if (cfg.leilo.idAlloc)
     delete[] cfg.leilo.groupID;
@@ -281,4 +323,5 @@ void clientCleanup() {
       delete[] cfg.atoms[i].id; // should be the only one that is dynamically allocated
   }
   delete[] pollCnt;
+  return true;
 }

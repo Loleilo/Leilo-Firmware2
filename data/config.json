@@ -5,11 +5,11 @@
 	},
 	"leilo": {
 		"version": "1.0.0",
-		"apiURL": "http://sunnylan.tk/Leilo-API/api.php",
-		"username": "sunny_esp8266_1",
-		"password": "45i48tljwo8tj3o8jtt3qo8j",
+		"apiURL": "http://leilo.ml/api/",
+		"username": "sunny",
+		"password": "password123",
 		"groupName": "Device 1",
-		"groupState": "unmodified",
+		"groupState": "uncreated",
 		"groupID": "d7578587-5953-11e7-87c1-feed01100013",
 		"pollInt": 1000
 	},
@@ -17,7 +17,7 @@
 	"atoms": {
 		"D6": {
 			"name": "Garage door",
-			"state": "unmodified",
+			"state": "uncreated",
 			"type": "digital",
 			"direction": "input_pullup",
 			"id":"d7c5cbc9-5953-11e7-87c1-feed01100013",
@@ -25,7 +25,7 @@
 			"pin":12
 		},
 		"_heartbeat": {
-			"state": "unmodified",
+			"state": "uncreated",
 			"name": "_heartbeat",
 			"type": "heartbeat",
 			"id":"d824583a-5953-11e7-87c1-feed01100013",
